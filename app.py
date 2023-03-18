@@ -124,6 +124,11 @@ def test():
         return find_doctors(input)
     return render_template('diabetes_true.html')
 
+@app.route('/logout')
+def logout():
+    logout_user()
+    return redirect(url_for('index'))
+
 ## Model
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
