@@ -80,6 +80,7 @@ def register():
 def predict_tool():
     return render_template('predict_tool.html')
 
+@login_required
 @app.route('/predict', methods=['POST'])
 def predict():
     data = request.get_json(force=True)
@@ -90,6 +91,38 @@ def predict():
         return jsonify({'result': 'The person is not diabetic'})
     else:
         return jsonify({'result': 'The person is diabetic'})
+    
+def find_doctors(zip_code):
+        # Replace YOUR_API_KEY with your actual API key
+        api_key = "AIzaSyAUZtbAaLjkeJ6TG9FrXBYH9MZAj9X0wJs"
+        url = "https://maps.googleapis.com/maps/api/place/textsearch/json"
+        query = "diabetes doctors near {}".format(zip_code)
+        params = {
+            "key": api_key,
+            "query": query
+        }
+        response = requests.get(url, params=params)
+        results = response.json().get("results", [])
+        doctors = []
+        for result in results:
+            doctor = {
+                "name": result["name"],
+                "address": result["formatted_address"],
+                "rating": result.get("rating", None),
+                "distance": result.get("distance", None)
+            }
+            doctors.append(doctor)
+        # Sort the doctors by rating and distance
+        doctors = sorted(doctors, key=lambda x: (-x["rating"] if x["rating"] else 0, x["distance"] if x["distance"] else float("inf")))
+        # Return the top 10 doctors
+        return doctors[:10]
+
+@app.route('/test', methods=['GET', 'POST'])
+def test():
+    input = "800020"
+    if request.method == 'POST':
+        return find_doctors(input)
+    return render_template('diabetes_true.html')
 
 ## Model
 class User(UserMixin, db.Model):
