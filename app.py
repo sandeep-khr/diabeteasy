@@ -1,3 +1,9 @@
+import numpy as np
+import pandas as pd
+from sklearn.model_selection import train_test_split
+# from sklearn import svm
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import accuracy_score
 from flask import Flask, request, jsonify, render_template, flash, url_for, request, redirect
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
@@ -6,10 +12,11 @@ from flask_login import UserMixin
 from flask_login import LoginManager, current_user, login_user, logout_user, login_required
 from sqlalchemy import func
 from forms import SignUpForm, LoginForm, PredictForm
+import requests
+
 
 app = Flask(__name__)
 
-# create the extension
 db = SQLAlchemy()
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///project.db"
 db.init_app(app)
@@ -18,6 +25,31 @@ app.secret_key = 'the random string'
 # db.create_all()
 login = LoginManager(app)
 login.login_view = 'login'
+
+# loading the diabetes dataset to a pandas DataFrame
+diabetes_dataset = pd.read_csv('./content/diabetes.csv') 
+
+# df = pd.read_csv('kaggle_diabetes.csv')
+diabetes_dataset = diabetes_dataset.rename(columns={'DiabetesPedigreeFunction':'DPF'})
+diabetes_dataset_copy = diabetes_dataset.copy(deep=True)
+diabetes_dataset_copy[['Glucose','BloodPressure','SkinThickness','Insulin','BMI']] = diabetes_dataset_copy[['Glucose','BloodPressure','SkinThickness','Insulin','BMI']].replace(0,np.NaN)
+
+diabetes_dataset_copy['Glucose'].fillna(diabetes_dataset_copy['Glucose'].mean(), inplace=True)
+diabetes_dataset_copy['BloodPressure'].fillna(diabetes_dataset_copy['BloodPressure'].mean(), inplace=True)
+diabetes_dataset_copy['SkinThickness'].fillna(diabetes_dataset_copy['SkinThickness'].median(), inplace=True)
+diabetes_dataset_copy['Insulin'].fillna(diabetes_dataset_copy['Insulin'].median(), inplace=True)
+diabetes_dataset_copy['BMI'].fillna(diabetes_dataset_copy['BMI'].median(), inplace=True)
+
+# separating the data and labels
+X = diabetes_dataset.drop(columns = 'Outcome', axis=1)
+Y = diabetes_dataset['Outcome']
+X_train, X_test, Y_train, Y_test = train_test_split(X,Y, test_size = 0.2, stratify=Y, random_state=2)
+
+#training the support vector Machine Classifier
+# classifier = svm.SVC(kernel='linear')
+# classifier.fit(X_train, Y_train)
+classifier = LogisticRegression(random_state = 0)
+classifier.fit(X_train, Y_train)
 
 
 @login.user_loader
@@ -48,7 +80,16 @@ def register():
 def predict_tool():
     return render_template('predict_tool.html')
 
+@app.route('/predict', methods=['POST'])
+def predict():
+    data = request.get_json(force=True)
+    prediction = classifier.predict([list(data.values())])
 
+    output = prediction[0]
+    if output == 0:
+        return jsonify({'result': 'The person is not diabetic'})
+    else:
+        return jsonify({'result': 'The person is diabetic'})
 
 ## Model
 class User(UserMixin, db.Model):
