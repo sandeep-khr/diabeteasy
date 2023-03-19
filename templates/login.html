@@ -40,52 +40,36 @@
         <div class="col-12 col-md-9 col-lg-7 col-xl-6">
           <div class="card shadow" style="border-radius: 15px">
             <div class="card-body p-4 mt-0">
-              <form>
-                <div class="d-flex flex-column">
-                  <div class="d-flex align-items-center justify-content-center">
-                    <img
-                      src="/static/images/di-logo.png"
-                      alt=""
-                      style="width: 40%"
-                    />
-                  </div>
-                  <div class="d-flex align-items-center justify-content-center">
-                    <!-- <h2>Sign Up</h2> -->
-                  </div>
-                </div>
-                <div class="form-outline mb-4">
-                  <label class="form-label" for="form2Example11"
-                    >Username</label
-                  >
-                  <input
-                    type="text"
-                    id="form2Example11"
-                    class="form-control"
-                    placeholder="Enter your username"
+              <div class="d-flex flex-column">
+                <div class="d-flex align-items-center justify-content-center">
+                  <img
+                    src="/static/images/di-logo.png"
+                    alt=""
+                    style="width: 40%"
                   />
+                </div>
+                <div class="d-flex align-items-center justify-content-center">
+                  <!-- <h2>Sign Up</h2> -->
+                </div>
+              </div>
+              <form action="{{ url_for('login') }}" method="post" novalidate>
+                {{ form.csrf_token }}
+                <div class="form-outline mb-4">
+                  <label class="form-label" for="username">Username</label>
+                  {{ form.username(size=64, class="form-control form-control-md", id="username", placeholder="Enter your username") }}
                 </div>
 
                 <div class="col mb-4">
-                  <label class="form-label" for="form2Example22"
-                    >Password</label
-                  >
-                  <input
-                    type="password"
-                    id="form2Example22"
-                    class="form-control"
-                    placeholder="Enter your password"
-                  />
+                  <label class="form-label" for="password">Password</label>
+                  {{ form.password(size=64, class="form-control form-control-md", id="password", placeholder="Enter your password") }}
                 </div>
 
                 <div class="text-center pt-1 mb-0 pb-1">
-                  <button
-                    class="btn btn-lg btn-block fa-lg gradient-custom-2 mb-0"
-                    type="button"
-                  >
-                    Login
-                  </button>
+                  {{form.submit(class="btn btn-lg btn-block fa-lg gradient-custom-2 mb-0 btnc")}}
                 </div>
+                <p class="text-center mt-2">Don't have an account? <a style="text-decoration:none" href="{{url_for('register')}}">Sign Up here</a></p>
               </form>
+
             </div>
           </div>
         </div>

@@ -12,7 +12,7 @@
     />
     <title>Register</title>
     <style>
-      body {
+      .bodybg {
         /* background-image: linear-gradient(#f5cadf, #f7a1a1); */
         /* background-image: url("static/images/background1.jpg"); */
         background: linear-gradient(
@@ -23,126 +23,90 @@
         color: black;
         font-weight: 500;
       }
-      main {
+      .mop {
         opacity: 0.9;
       }
-      .btn {
+      .btnc {
         background-color: #f88;
       }
-      .btn:hover {
+      .btnc:hover {
         background-color: rgb(248, 92, 92);
       }
     </style>
   </head>
-  <body>
-    <main class="mx-5">
+  <body class="bodybg">
+    <main class="mx-5 mop">
       <div class="row d-flex justify-content-center mt-4">
         <div class="col-12 col-md-9 col-lg-7 col-xl-6">
           <div class="card shadow" style="border-radius: 15px">
             <div class="card-body p-4 mt-0">
-              <form>
-                <div class="d-flex flex-column">
-                  <div class="d-flex align-items-center justify-content-center">
-                    <img
-                      src="/static/images/di-logo.png"
-                      alt=""
-                      style="width: 40%"
-                    />
-                  </div>
-                  <div class="d-flex align-items-center justify-content-center">
-                    <!-- <h2>Sign Up</h2> -->
-                  </div>
-                </div>
-                <div class="form-outline mb-4">
-                  <label class="form-label" for="form2Example11"
-                    >Username</label
-                  >
-                  <input
-                    type="text"
-                    id="form2Example11"
-                    class="form-control"
-                    placeholder="Enter a username"
+              <div class="d-flex flex-column">
+                <div class="d-flex align-items-center justify-content-center">
+                  <img
+                    src="/static/images/di-logo.png"
+                    alt=""
+                    style="width: 40%"
                   />
+                </div>
+                <div class="d-flex align-items-center justify-content-center">
+                  <!-- <h2>Sign Up</h2> -->
+                </div>
+              </div>
+              <form action="{{ url_for('register') }}" method="post" novalidate>
+                {{ form.csrf_token }}
+                <div class="form-outline mb-4">
+                  <label class="form-label" for="username">Username</label>
+                  {{ form.username(size=64, class="form-control form-control-md", id="username", placeholder="Enter a username") }}
                 </div>
 
                 <div class="form-outline mb-4">
-                  <label class="form-label" for="form2Example11">Email</label>
-                  <input
-                    type="email"
-                    id="form2Example11"
-                    class="form-control"
-                    placeholder="Enter your email"
-                  />
+                  <label class="form-label" for="email">Email</label>
+                  {{ form.email(size=64, class="form-control form-control-md", id="username", type="email", placeholder="Enter your email")}}
                 </div>
 
                 <div class="row">
                   <div class="col mb-4">
-                    <label class="form-label" for="form2Example22"
-                      >Password</label
-                    >
-                    <input
-                      type="password"
-                      id="form2Example22"
-                      class="form-control"
-                      placeholder="Password"
-                    />
+                    <label class="form-label" for="password">Password</label>
+                    {{ form.password(size=64, class="form-control form-control-md", id="password", placeholder="Enter a Password") }}
                   </div>
 
                   <div class="col mb-4">
-                    <label class="form-label" for="form2Example22"
+                    <label class="form-label" for="password2"
                       >Confirm Password</label
                     >
-                    <input
-                      type="password"
-                      id="form2Example22"
-                      class="form-control"
-                      placeholder="Confirm your password"
-                    />
+                    {{ form.password2(size=64, class="form-control form-control-md", id="password2", placeholder="Confirm your password") }}
                   </div>
                 </div>
 
                 <div class="row">
                   <div class="col mb-4">
-                    <label class="form-label" for="form2Example11">Age</label>
-                    <input
-                      type="email"
-                      id="form2Example11"
-                      class="form-control"
-                      placeholder="Enter your age"
-                    />
+                    <label class="form-label" for="age">Age</label>
+                    {{ form.age(size=64, class="form-control form-control-md", id="age", placeholder="Enter your age") }}
                   </div>
                   <div class="col mb-4">
-                    <label class="form-label" for="form2Example22">State</label>
-                    <input
-                      type="text"
-                      id="form2Example22"
-                      class="form-control"
-                      placeholder="Enter you state"
-                    />
+                    <label class="form-label" for="address">Address</label>
+                    {{ form.address(size=64, class="form-control form-control-md", id="address", placeholder="City, State")}}
                   </div>
 
                   <div class="col mb-4">
-                    <label class="form-label" for="form2Example22">City</label>
-                    <input
-                      type="text"
-                      id="form2Example22"
-                      class="form-control"
-                      placeholder="Enter your city"
-                    />
+                    <label class="form-label" for="pincode">Pin Code</label>
+                    {{ form.pincode(size=64, class="form-control form-control-md", id="pincode", placeholder="Pincode (Zipcode)") }}
                   </div>
                 </div>
 
                 <div class="text-center pt-1 mb-0 pb-1">
+                  {#
                   <button
                     class="btn btn-lg btn-block fa-lg gradient-custom-2 mb-0"
                     type="button"
                   >
                     Sign up
                   </button>
+                  #} {{form.submit(class="btn btn-lg btn-block fa-lg gradient-custom-2 mb-0 btnc")}}
                 </div>
                 <p class="text-center mt-2">
                   Already have an account?
-                  <a href="#">Login here</a>
+                  <a href="{{url_for('login')}}">Login here</a>
                 </p>
               </form>
             </div>
