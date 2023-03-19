@@ -7,9 +7,11 @@ from wtforms.validators import ValidationError, Email, EqualTo, Length, InputReq
 class SignUpForm(FlaskForm):
     username = StringField('Username', validators=[InputRequired(), Length(max=30, message='Should be less than 30 characters')])
     email = StringField('Email', validators=[InputRequired(), Email()])
-    age = IntegerField('Age', [InputRequired(), Length(min=10, max=10, message="Please provide your age")])
+    age = IntegerField('Age', [InputRequired()])
     password = PasswordField('Password', validators=[InputRequired()])
     password2 = PasswordField('Repeat Password', validators=[InputRequired(), EqualTo('password')])
+    address = StringField('Address', [InputRequired()])
+    pincode = StringField('Pincode', [InputRequired()])
     # dp = FileField(validators=[FileAllowed(IMAGES, 'Only images are allowed')])
     submit = SubmitField('Sign Up')
 
@@ -21,8 +23,7 @@ class SignUpForm(FlaskForm):
 class LoginForm(FlaskForm):
     username = StringField('Username', validators=[InputRequired()])
     password = PasswordField('Password', validators=[InputRequired()])
-    remember_me = BooleanField('Remember Me')
-    submit = SubmitField('Sign In')
+    submit = SubmitField('Log In')
 
 class PredictForm(FlaskForm):
     pregnancies = IntegerField('Pregnancies', [InputRequired()])
@@ -33,3 +34,4 @@ class PredictForm(FlaskForm):
     bmi = FloatField('BMI', [InputRequired()])
     dpf = FloatField('DPF', [InputRequired()])
     age = IntegerField('Age', [InputRequired()])
+    submit = SubmitField('Check')
