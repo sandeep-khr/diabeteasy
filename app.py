@@ -1,7 +1,6 @@
 import numpy as np
 import pandas as pd
 from sklearn.model_selection import train_test_split
-# from sklearn import svm
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score
 from flask import Flask, request, jsonify, render_template, flash, url_for, request, redirect
@@ -10,7 +9,6 @@ from datetime import datetime
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import UserMixin
 from flask_login import LoginManager, current_user, login_user, logout_user, login_required
-from sqlalchemy import func
 from forms import SignUpForm, LoginForm, PredictForm
 import requests
 
@@ -20,9 +18,9 @@ app = Flask(__name__)
 db = SQLAlchemy()
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///project.db"
 db.init_app(app)
-app.secret_key = 'the random string'
-# app.app_context().push()
-# db.create_all()
+app.secret_key = 'sfhiybbcuenkhyibkjcksadhflkdflkjd'
+app.app_context().push()
+
 login = LoginManager(app)
 login.login_view = 'login'
 
@@ -59,7 +57,11 @@ def load_user(id):
 # define the route for the home page
 @app.route('/')
 def index():
-    return render_template('index.html')
+    if current_user.is_authenticated:
+        logged = True
+    else:
+        logged = False
+    return render_template('index.html', logged = logged)
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
@@ -67,7 +69,7 @@ def register():
         return redirect(url_for('index'))
     form = SignUpForm()
     if form.validate_on_submit():
-        user = User(username=form.username.data, email=form.email.data, age = form.age.data)
+        user = User(username=form.username.data, email=form.email.data, age = form.age.data, address = form.address.data, pincode = form.pincode.data)
         user.set_password(form.password.data)
         db.session.add(user)
         db.session.commit()
@@ -75,23 +77,62 @@ def register():
         return redirect(url_for('login'))
     return render_template('register.html', title='Register', form=form)
 
-@login_required
-@app.route('/predict')
-def predict_tool():
-    return render_template('predict_tool.html')
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if current_user.is_authenticated:
+        return redirect(url_for('index'))
+    form = LoginForm()
+    if form.validate_on_submit():
+        user = User.query.filter_by(username=form.username.data).first()
+        if user is None or not user.check_password(form.password.data):
+            flash('Invalid username or password')
+            return redirect(url_for('login'))
+        login_user(user)
+        return redirect(url_for('index'))
+    return render_template('login.html', title='Login', form=form)
 
+@app.route('/logout')
+def logout():
+    logout_user()
+    return redirect(url_for('index'))
+
+
+@app.route('/predict', methods = ['GET', 'POST'])
 @login_required
-@app.route('/predict', methods=['POST'])
 def predict():
-    data = request.get_json(force=True)
-    prediction = classifier.predict([list(data.values())])
+    form = PredictForm()
+    if request.method == 'POST':
+        # data = request.get_json(force=True)
+        # print(data)
+        data = {'Pregnancies': form.pregnancies.data, 'Glucose': form.glucose.data, 'BloodPressure': form.bloodPressure.data, 'SkinThickness': form.skinThickness.data, 'Insulin': form.insulin.data, 'BMI': form.bmi.data, 'DiabetesPedigreeFunction': form.dpf.data, 'Age': form.age.data}
+        print(data)
+        prediction = classifier.predict([list(data.values())])
 
-    output = prediction[0]
-    if output == 0:
-        return jsonify({'result': 'The person is not diabetic'})
-    else:
-        return jsonify({'result': 'The person is diabetic'})
+        output = prediction[0]
+        if output == 0:
+            # return jsonify({'result': 'The person is not diabetic'})
+            return render_template('diabetes_false.html')
+        else:
+            # return jsonify({'result': 'The person is diabetic'})
+            current_user.dibetic = True
+            db.session.commit()
+            return render_template('diabetes_true.html')
+    return render_template('predict_form.html', form=form)
+
+# @app.route('/predict', methods=['POST'])
+# def predict():
+#     # data = request.get_json(force=True)
+#     # print(data)
+#     data = {'Pregnancies': 6, 'Glucose': 148, 'BloodPressure': 72, 'SkinThickness': 35, 'Insulin': 0, 'BMI': 33.6, 'DiabetesPedigreeFunction': 0.627, 'Age': 50}
+#     prediction = classifier.predict([list(data.values())])
+
+#     output = prediction[0]
+#     if output == 0:
+#         return jsonify({'result': 'The person is not diabetic'})
+#     else:
+#         return jsonify({'result': 'The person is diabetic'})
     
+
 def find_doctors(zip_code):
         # Replace YOUR_API_KEY with your actual API key
         api_key = "AIzaSyAUZtbAaLjkeJ6TG9FrXBYH9MZAj9X0wJs"
@@ -109,7 +150,9 @@ def find_doctors(zip_code):
                 "name": result["name"],
                 "address": result["formatted_address"],
                 "rating": result.get("rating", None),
-                "distance": result.get("distance", None)
+                "distance": result.get("distance", None),
+                "url": f"https://www.google.com/maps/place/?q=place_id:{result['place_id']}",
+                "location": result["geometry"]["location"]
             }
             doctors.append(doctor)
         # Sort the doctors by rating and distance
@@ -124,12 +167,71 @@ def test():
         return find_doctors(input)
     return render_template('diabetes_true.html')
 
-@app.route('/logout')
-def logout():
-    logout_user()
-    return redirect(url_for('index'))
+@app.route('/suggestions', methods=['GET', 'POST'])
+@login_required
+def suggestions():
+    doctors = find_doctors(current_user.pincode)
+    # doctors = json.loads(lists)
+    # return render_template('suggestions.html')
+    return render_template('suggestions.html', doctors=doctors)
 
-## Model
+@app.route('/suggestionf', methods=['GET', 'POST'])
+# @login_required
+def suggestionf():
+    doctors = find_doctors(current_user.pincode)
+    return render_template('suggestionf.html', doctors=doctors)
+
+@app.route('/add_medication', methods=['POST'])
+def add_medication():
+    name = request.form['name']
+    dosage = request.form['dosage']
+    frequency = request.form['frequency']
+    start_date = request.form['start_date']
+    end_date = request.form['end_date']
+    user_id = current_user.id
+
+    medication = Medication(name=name, dosage=dosage, frequency=frequency,
+                            start_date=start_date, end_date=end_date, user_id=user_id)
+    db.session.add(medication)
+    db.session.commit()
+
+    flash('Medication added successfully.')
+    return redirect(url_for('medication_list'))
+
+@app.route('/medication_list')
+@login_required
+def medication_list():
+    medications = Medication.query.filter_by(user_id=current_user.id).all()
+    doctors = find_doctors(current_user.pincode)
+    return render_template('suggestions.html', medications=medications, doctors=doctors)
+
+@app.route('/update_medication/<int:medication_id>', methods=['GET', 'POST'])
+@login_required
+def update_medication(medication_id):
+    medication = Medication.query.get_or_404(medication_id)
+    if request.method == 'POST':
+        medication.name = request.form['name']
+        medication.dosage = request.form['dosage']
+        medication.frequency = request.form['frequency']
+        medication.start_date = request.form['start_date']
+        medication.end_date = request.form['end_date']
+        db.session.commit()
+        flash('Medication updated successfully.')
+        return redirect(url_for('medication_list'))
+    else:
+        doctors = find_doctors(current_user.pincode)
+        return render_template('suggestions.html', medication=medication, doctors=doctors)
+    
+@app.route('/delete_medication/<int:medication_id>', methods=['POST'])
+@login_required
+def delete_medication(medication_id):
+    medication = Medication.query.get_or_404(medication_id)
+    db.session.delete(medication)
+    db.session.commit()
+    flash('Medication deleted successfully.')
+    return redirect(url_for('medication_list'))
+
+##### Model
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(64), index=True, unique=True)
@@ -137,10 +239,12 @@ class User(UserMixin, db.Model):
     # dp = db.Column(db.String(100))
     password_hash = db.Column(db.String(128))
     age = db.Column(db.String(140))
-    state = db.Column(db.String(120))
-    city = db.Column(db.String(120))
+    address = db.Column(db.String(120))
+    pincode = db.Column(db.String(60))
+    # city = db.Column(db.String(120))
     join_date = db.Column(db.DateTime, default=datetime.utcnow)
-    
+    dibetic = db.Column(db.Boolean, default = False)
+    medications = db.relationship('Medication', back_populates='user')
 
     def __repr__(self):
         return '<User {}>'.format(self.username)
@@ -150,8 +254,20 @@ class User(UserMixin, db.Model):
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
 
+class Medication(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String)
+    dosage = db.Column(db.Integer)
+    frequency = db.Column(db.String)
+    start_date = db.Column(db.String)
+    end_date = db.Column(db.String)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    user = db.relationship('User', back_populates='medications')
+    
 
+    
 
 
 if __name__ == '__main__':
+    db.create_all()
     app.run(port=5000, debug=True)
